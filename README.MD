@@ -36,6 +36,9 @@ Wrote this to aid [CloudBrute]("https://github.com/0xsha/cloudbrute")
 This tool is useful for finding proxies to bypass rate and region limitation. Using this tool, you can find proxies that work on your target. Some everyday use cases are scraping, brute force, bucket hunting, etc.
 
 
+## ProxyFor in action
+
+[![asciicast](https://asciinema.org/a/gK5bVyEE9CYBLP8fYoy3IavFF.svg)](https://asciinema.org/a/gK5bVyEE9CYBLP8fYoy3IavFF)
 
 ## How to contribute
 - Add a module or fix something and then pull request.
