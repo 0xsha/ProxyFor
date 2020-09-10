@@ -4,19 +4,23 @@ import (
 	"golang.org/x/net/proxy"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
 
-func CheckSocks5Proxy(proxyList chan string, wg *sync.WaitGroup , timeout int  , valid chan ValidProxy, domain string , code int)   {
-
+func CheckSocks5Proxy(proxyList chan string, wg *sync.WaitGroup, timeout int, valid chan ValidProxy, domain string, code int) {
 
 	wg.Add(1)
 	defer wg.Done()
 
 	for proxyLine := range proxyList {
-
-
+		if strings.Contains(proxyLine, "socks5://") {
+			proxyLine = strings.Replace(proxyLine, "socks5://", "", -1)
+		}
+		if strings.Contains(proxyLine, "socks4://") {
+			proxyLine = strings.Replace(proxyLine, "socks4://", "", -1)
+		}
 
 		dialSocksProxy, err := proxy.SOCKS5("tcp", proxyLine, nil, proxy.Direct)
 		socksTransport := &http.Transport{Dial: dialSocksProxy.Dial, DisableKeepAlives: true}
@@ -25,11 +29,9 @@ func CheckSocks5Proxy(proxyList chan string, wg *sync.WaitGroup , timeout int  ,
 			continue
 		}
 
-
-
 		socksClient := &http.Client{
 			Transport: socksTransport,
-			Timeout:  time.Duration(timeout) * time.Second,
+			Timeout:   time.Duration(timeout) * time.Second,
 		}
 
 		start := time.Now()
@@ -39,26 +41,24 @@ func CheckSocks5Proxy(proxyList chan string, wg *sync.WaitGroup , timeout int  ,
 
 		}
 
-		if resp.StatusCode != code{
+		if resp.StatusCode != code {
 			continue
 		}
 
 		_, err = ioutil.ReadAll(resp.Body)
-		if err!=nil{
+		if err != nil {
 			continue
 		}
 		end := time.Since(start)
 
 		//log.Info().Msg(string(body))
 
-
 		valid <- ValidProxy{
 			ResponseTime: end,
-		    //	Anonymous:    true,
-			ProxyType:    "socks5",
-			Address:      proxyLine,
+			//	Anonymous:    true,
+			ProxyType: "socks5",
+			Address:   proxyLine,
 		}
-
 
 		// In case you want check for anonymous proxy
 
@@ -81,9 +81,7 @@ func CheckSocks5Proxy(proxyList chan string, wg *sync.WaitGroup , timeout int  ,
 		//
 		//}
 
-
 		_ = resp.Body.Close()
 	}
-
 
 }

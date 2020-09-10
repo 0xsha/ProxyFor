@@ -4,10 +4,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 )
-func CheckHTTPProxy(proxyList chan string, wg *sync.WaitGroup , timeout int , valid chan ValidProxy, domain string , code int)  {
+
+func CheckHTTPProxy(proxyList chan string, wg *sync.WaitGroup, timeout int, valid chan ValidProxy, domain string, code int) {
 
 	//var valid []string
 
@@ -15,17 +17,18 @@ func CheckHTTPProxy(proxyList chan string, wg *sync.WaitGroup , timeout int , va
 	defer wg.Done()
 	for proxyLine := range proxyList {
 
-		proxyURL, _ := url.Parse("http://"+proxyLine)
+		proxyURL, _ := url.Parse("http://" + proxyLine)
+		if strings.HasPrefix(proxyLine, "http://") || strings.HasPrefix(proxyLine, "https://") {
+			proxyURL, _ = url.Parse(proxyLine)
+		}
 
 		httpProxyClient := &http.Client{
-			Timeout:  time.Duration(timeout) * time.Second,
+			Timeout: time.Duration(timeout) * time.Second,
 			Transport: &http.Transport{
 				DisableKeepAlives: true,
 				Proxy:             http.ProxyURL(proxyURL),
 			},
 		}
-
-
 
 		start := time.Now()
 		resp, err := httpProxyClient.Get(domain)
@@ -34,9 +37,7 @@ func CheckHTTPProxy(proxyList chan string, wg *sync.WaitGroup , timeout int , va
 
 		}
 
-
-
-		if resp.StatusCode != code{
+		if resp.StatusCode != code {
 			continue
 		}
 
@@ -46,15 +47,14 @@ func CheckHTTPProxy(proxyList chan string, wg *sync.WaitGroup , timeout int , va
 		}
 		end := time.Since(start)
 
-
 		//fmt.Println(string(body))
 
 		valid <- ValidProxy{
-					ResponseTime: end,
-					//Anonymous:    false,
-					ProxyType:    "HTTP(s)",
-					Address:      proxyLine,
-				}
+			ResponseTime: end,
+			//Anonymous:    false,
+			ProxyType: "HTTP(s)",
+			Address:   proxyLine,
+		}
 
 		// In case you want check for anonymous proxy
 
